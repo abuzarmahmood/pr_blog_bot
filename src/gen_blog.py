@@ -497,7 +497,7 @@ class BlogGenerator:
 
         # Call OpenAI API to refine the blog post
         response = self.client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-2024-08-06",
             messages=[
                 {"role": "system", "content": "You are an expert human editor who specializes in making AI-generated content sound more natural, engaging, and human-written. You maintain all technical accuracy while improving the writing style."},
                 {"role": "user", "content": prompt}
