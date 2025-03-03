@@ -199,3 +199,33 @@ def summarize_commits(commits: List[Dict[str, Any]]) -> str:
         summary += f"{i}. {message}\n"
     
     return summary
+
+def download_image(image_url: str, save_path: str) -> bool:
+    """
+    Download an image from a URL and save it to a local path
+    
+    Args:
+        image_url: URL of the image to download
+        save_path: Local path to save the image to
+        
+    Returns:
+        True if download was successful, False otherwise
+    """
+    try:
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        
+        # Download the image
+        response = requests.get(image_url, stream=True)
+        response.raise_for_status()
+        
+        # Save the image to the specified path
+        with open(save_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+                
+        print_progress(f"Image downloaded successfully to {save_path}", "✅", "bold", "green")
+        return True
+    except Exception as e:
+        print_progress(f"Failed to download image: {str(e)}", "❌", "bold", "red")
+        return False
