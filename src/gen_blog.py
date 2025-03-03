@@ -112,6 +112,36 @@ class BlogGenerator:
             "contributors": list(contributors)
         }
 
+    def generate_image(self, prompt: str, size: str = "1024x1024", model: str = "dall-e-3") -> Optional[str]:
+        """
+        Generate an image using OpenAI's DALL-E API
+        
+        Args:
+            prompt: Text description of the desired image
+            size: Size of the image (1024x1024, 1792x1024, or 1024x1792 for dall-e-3)
+            model: Model to use (dall-e-2 or dall-e-3)
+            
+        Returns:
+            URL of the generated image, or None if generation failed
+        """
+        print_progress("Generating custom image with DALL-E", "🎨", "bold", "magenta")
+        try:
+            response = self.client.images.generate(
+                model=model,
+                prompt=prompt,
+                size=size,
+                quality="standard",
+                n=1,
+            )
+            
+            # Extract the image URL from the response
+            image_url = response.data[0].url
+            print_progress("Image generated successfully", "✅", "bold", "green")
+            return image_url
+        except Exception as e:
+            print_progress(f"Failed to generate image: {str(e)}", "⚠️", "bold", "red")
+            return None
+
     def generate_blog_post(self, pr_info: Dict[str, Any], user_direction: Optional[str] = None) -> str:
         """
         Generate a blog post based on PR information
@@ -139,9 +169,33 @@ class BlogGenerator:
         
         blog_content = response.choices[0].message.content
         
-        # Verify that the blog post contains an image
-        if "![" not in blog_content or "](" not in blog_content:
-            print_progress("Adding image to blog post", "🖼️", "bold", "yellow")
+        # Generate a custom image for the blog post
+        image_prompt = f"Create a technical illustration for a blog post about: {pr_info['pr_title']}. " \
+                       f"The changes involve {', '.join(pr_info['diff_summary']['languages'])} code. " \
+                       f"Make it visually appealing and professional."
+        
+        image_url = self.generate_image(image_prompt)
+        
+        # Add the generated image to the blog post if it doesn't already have one
+        if image_url and ("![" not in blog_content or "](" not in blog_content):
+            print_progress("Adding generated image to blog post", "🖼️", "bold", "yellow")
+            
+            # Create image caption based on PR title
+            image_caption = f"Visual representation of {pr_info['pr_title']}"
+            
+            # Add the image at the beginning of the blog post, after the title if present
+            if blog_content.startswith("#"):
+                # Find the end of the title line
+                title_end = blog_content.find("\n")
+                if title_end != -1:
+                    blog_content = blog_content[:title_end+1] + f"\n![{image_caption}]({image_url})\n\n" + blog_content[title_end+1:]
+            else:
+                # If no title, add the image at the very beginning
+                blog_content = f"![{image_caption}]({image_url})\n\n" + blog_content
+        
+        # If we couldn't generate an image or add it properly, fall back to the old method
+        elif "![" not in blog_content or "](" not in blog_content:
+            print_progress("Adding image to blog post (fallback method)", "🖼️", "bold", "yellow")
             # If no image is present, add a request to include one
             follow_up_prompt = f"""
             The blog post you generated doesn't include an image. Please add at least one relevant image using Markdown syntax.
@@ -221,17 +275,12 @@ class BlogGenerator:
         3. Highlight the key technical aspects of the changes
         4. Explain the impact or benefits of these changes
         5. Include code examples where relevant
-        6. Include at least one relevant image with proper Markdown syntax (![alt text](image_url))
-        7. End with a conclusion
+        6. End with a conclusion
         
-        Format the blog post in Markdown. Make sure to include at least one relevant image using Markdown image syntax.
-        You can use images from these sources:
-        - https://unsplash.com/ (for high-quality free stock photos)
-        - https://shields.io/ (for badges and status shields)
-        - https://mermaid.live/ (for diagrams, use mermaid syntax)
-        - https://carbon.now.sh/ (for code screenshots)
+        Format the blog post in Markdown. Don't worry about including images - I'll handle that separately.
+        Focus on creating high-quality, informative content about the technical changes.
         
-        For technical topics, consider including diagrams, flowcharts, or screenshots that illustrate the concepts.
+        For technical topics, consider including code snippets, explanations of algorithms, or architectural decisions.
         """
 
         return prompt

@@ -6,6 +6,7 @@ Turn your GitHub pull requests into polished, professional blog posts with this 
 
 - **Smart PR Analysis**: Automatically extracts code diffs, commit messages, PR titles and descriptions
 - **AI-Powered Content Generation**: Creates well-structured technical blog posts using OpenAI's GPT models
+- **Custom Image Generation**: Creates unique, relevant images for each blog post using DALL-E
 - **Web Research Integration**: Enhances posts with relevant content from across the web
 - **Customizable Output**: Take control with user-defined direction for the tone and focus
 - **Flexible Updates**: Easily revise and enhance existing blog posts with new information
@@ -16,7 +17,7 @@ Turn your GitHub pull requests into polished, professional blog posts with this 
 
 - Built with Python 3
 - Uses GitHub API for PR data extraction
-- Leverages OpenAI's API for content generation
+- Leverages OpenAI's API for content generation and image creation
 - Command-line interface for easy integration into workflows
 - Modular architecture with separate utilities for GitHub interactions, content generation, and web search
 
@@ -82,13 +83,14 @@ python src/cli.py --repo owner/repo --pr 123 --enhance
 
 1. **API Keys**:
    - GitHub Token: Required for accessing PR data (especially for private repositories)
-   - OpenAI API Key: Required for content generation
+   - OpenAI API Key: Required for content generation and image creation
 
 2. **Dependencies**:
    - Python 3.7+
-   - OpenAI Python client
+   - OpenAI Python client (v1.0.0+)
    - Requests library for API calls
    - dotenv for environment variable management
+   - Pillow for image processing
 
 ## 📋 Command Options
 
