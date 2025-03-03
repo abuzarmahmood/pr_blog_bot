@@ -5,10 +5,47 @@ import requests
 import re
 from typing import Dict, List, Optional, Tuple, Any
 import os
+import sys
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
+
+def print_progress(message: str, emoji: str = "🔄", style: str = "bold", color: str = "blue") -> None:
+    """
+    Print a colorful progress message to the console
+    
+    Args:
+        message: The message to print
+        emoji: Emoji to prepend to the message
+        style: Text style (bold, italic, underline)
+        color: Text color (blue, green, yellow, red, magenta, cyan)
+    """
+    # ANSI escape codes for styling
+    styles = {
+        "bold": "\033[1m",
+        "italic": "\033[3m",
+        "underline": "\033[4m",
+        "reset": "\033[0m"
+    }
+    
+    colors = {
+        "blue": "\033[94m",
+        "green": "\033[92m",
+        "yellow": "\033[93m",
+        "red": "\033[91m",
+        "magenta": "\033[95m",
+        "cyan": "\033[96m"
+    }
+    
+    # Apply styling
+    style_code = styles.get(style.lower(), "")
+    color_code = colors.get(color.lower(), "")
+    reset = styles["reset"]
+    
+    # Print the message
+    print(f"{color_code}{style_code}{emoji} {message}{reset}")
+    sys.stdout.flush()  # Ensure the message is displayed immediately
 
 def fetch_pr_data(repo_owner: str, repo_name: str, pr_number: int) -> Dict[str, Any]:
     """

@@ -16,7 +16,8 @@ from utils import (
     fetch_pr_diff,
     parse_diff,
     summarize_commits,
-    search_web
+    search_web,
+    print_progress
 )
 
 class BlogGenerator:
@@ -52,16 +53,20 @@ class BlogGenerator:
         Returns:
             Dictionary with PR information
         """
+        print_progress(f"Fetching PR #{pr_number} data from {repo_owner}/{repo_name}", "🔍", "bold", "blue")
         # Fetch PR data
         pr_data = fetch_pr_data(repo_owner, repo_name, pr_number)
 
+        print_progress("Retrieving commit history", "📜", "bold", "cyan")
         # Fetch commits
         commits = fetch_pr_commits(repo_owner, repo_name, pr_number)
 
+        print_progress("Downloading and analyzing code changes", "📊", "bold", "magenta")
         # Fetch and parse diff
         diff_content = fetch_pr_diff(repo_owner, repo_name, pr_number)
         diff_summary = parse_diff(diff_content)
 
+        print_progress("Summarizing commit messages", "📝", "bold", "green")
         # Summarize commits
         commit_summary = summarize_commits(commits)
 
@@ -89,9 +94,11 @@ class BlogGenerator:
         Returns:
             Generated blog post content
         """
+        print_progress("Creating blog post prompt", "✨", "bold", "yellow")
         # Prepare the prompt for the LLM
         prompt = self._create_blog_prompt(pr_info, user_direction)
 
+        print_progress("Generating blog post content with AI", "🤖", "bold", "cyan")
         # Call OpenAI API to generate the blog post
         response = self.client.chat.completions.create(model="gpt-4",  # or another appropriate model
         messages=[
@@ -168,6 +175,7 @@ class BlogGenerator:
         Returns:
             Enhanced blog post content
         """
+        print_progress("Searching the web for related content", "🌐", "bold", "blue")
         # Create a search query based on PR info
         search_query = f"{pr_info['pr_title']} {' '.join(pr_info['diff_summary']['languages'])}"
 
@@ -175,6 +183,7 @@ class BlogGenerator:
         search_results = search_web(search_query)
 
         if not search_results:
+            print_progress("No relevant web content found", "⚠️", "bold", "yellow")
             return blog_post
 
         # Create a prompt to enhance the blog post
@@ -192,6 +201,7 @@ class BlogGenerator:
         Keep the blog post in Markdown format.
         """
 
+        print_progress("Enhancing blog post with web content", "🔍", "bold", "magenta")
         # Call OpenAI API to enhance the blog post
         response = self.client.chat.completions.create(model="gpt-4",  # or another appropriate model
         messages=[
@@ -214,6 +224,7 @@ class BlogGenerator:
         Returns:
             Updated blog post content
         """
+        print_progress("Preparing to update existing blog post", "📝", "bold", "cyan")
         prompt = f"""
         Here is an existing blog post:
         
@@ -226,6 +237,7 @@ class BlogGenerator:
         Keep the blog post in Markdown format.
         """
 
+        print_progress("Updating blog post content with AI", "🤖", "bold", "green")
         # Call OpenAI API to update the blog post
         response = self.client.chat.completions.create(model="gpt-4",  # or another appropriate model
         messages=[
@@ -241,6 +253,10 @@ def main():
     """
     Main entry point for the blog generator
     """
+    from utils import print_progress
+    
+    print_progress("Starting PR-to-Blog Generator", "🚀", "bold", "green")
+    
     parser = argparse.ArgumentParser(description="Generate a blog post from a GitHub pull request")
     parser.add_argument("--repo", required=True, help="Repository in the format owner/name")
     parser.add_argument("--pr", required=True, type=int, help="Pull request number")
@@ -250,6 +266,7 @@ def main():
     parser.add_argument("--update", help="Update an existing blog post with new information")
 
     args = parser.parse_args()
+    print_progress("Parsed command line arguments", "✅", "bold", "blue")
 
     # Parse repository owner and name
     repo_parts = args.repo.split("/")
@@ -257,8 +274,10 @@ def main():
         parser.error("Repository must be in the format owner/name")
 
     repo_owner, repo_name = repo_parts
+    print_progress(f"Target repository: {repo_owner}/{repo_name}", "📦", "bold", "cyan")
 
     # Initialize the blog generator
+    print_progress("Initializing blog generator", "⚙️", "bold", "magenta")
     generator = BlogGenerator()
 
     # If updating an existing blog post
@@ -266,16 +285,18 @@ def main():
         if not os.path.exists(args.update):
             parser.error(f"Blog post file {args.update} does not exist")
 
+        print_progress(f"Reading existing blog post from {args.update}", "📄", "bold", "blue")
         with open(args.update, "r") as f:
             existing_blog_post = f.read()
 
         updated_blog_post = generator.update_blog_post(existing_blog_post, args.direction or "")
 
         output_file = args.update
+        print_progress(f"Saving updated blog post", "💾", "bold", "green")
         with open(output_file, "w") as f:
             f.write(updated_blog_post)
 
-        print(f"Updated blog post saved to {output_file}")
+        print_progress(f"Updated blog post saved to {output_file}", "🎉", "bold", "green")
         return
 
     # Collect PR information
@@ -286,6 +307,7 @@ def main():
 
     # Enhance with web content if requested
     if args.enhance:
+        print_progress("Enhancing blog post with web research", "🔎", "bold", "blue")
         blog_post = generator.enhance_with_web_content(blog_post, pr_info)
 
     # Save to file
@@ -295,10 +317,11 @@ def main():
         date_str = datetime.now().strftime("%Y%m%d")
         output_file = f"blog_post_{args.pr}_{date_str}.md"
 
+    print_progress(f"Saving blog post to {output_file}", "💾", "bold", "cyan")
     with open(output_file, "w") as f:
         f.write(blog_post)
 
-    print(f"Blog post saved to {output_file}")
+    print_progress(f"Blog post successfully saved to {output_file}", "🎉", "bold", "green")
 
 if __name__ == "__main__":
     main()
