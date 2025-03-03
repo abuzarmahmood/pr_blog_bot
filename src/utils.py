@@ -122,35 +122,34 @@ def search_web(query: str, num_results: int = 5) -> List[Dict[str, str]]:
         num_results: Number of results to return
         
     Returns:
-        List of search results with title and snippet
+        List of search results with title and snippet, or empty list if search fails
     """
-    # This is a placeholder. In a real implementation, you would use a search API
-    # like Google Custom Search, Bing Search, or a similar service
-    
-    # Mock implementation for demonstration
-    results = [
-        {"title": f"Result {i} for {query}", "url": f"https://example.com/{i}", "snippet": f"This is a snippet for result {i}"}
-        for i in range(1, num_results + 1)
-    ]
-    
-    # Add a mock image result
-    image_sources = [
-        "https://unsplash.com/photos/random?topics=technology",
-        "https://source.unsplash.com/random/800x600/?coding",
-        "https://source.unsplash.com/random/800x600/?programming",
-        "https://shields.io/badge/PR-Approved-success",
-        "https://mermaid.ink/img/pako:eNptkMFqwzAMhl9F-NRBXwDnELJLWWHQbj0YxVYSsOwgy2ODkHcfjZ3SbvPB0v_9nwRnNLEjNPDu-k9KLlZ_CFlS9uv-MbT90JMqJa_gYDNKTkuDLVZ3bajPXUKLDzhkzJR9oeQ6FJzpYMq6bWtn6mZnmn3btCDYYPYD-ULJhxQ_qYhrcKZq9_vdU7vbmQo0cCSfMGDEQMlnxMGjgTP6K8UYNLxSSiGhhmzRj1OuKQzjRDGYf6sw5XxbaBhjQk2Fw_-Et-KmN-MMGvznKk7-Wm5fNPinMA"
-    ]
-    
-    # Add image results
-    results.append({
-        "title": f"Image result for {query}",
-        "url": image_sources[0],
-        "snippet": f"Relevant image for {query}",
-        "is_image": True
-    })
-    
-    return results
+    try:
+        # This is a placeholder. In a real implementation, you would use a search API
+        # like Google Custom Search, Bing Search, or a similar service
+        
+        # TODO: Replace with actual search API implementation
+        # For example, using Google Custom Search API:
+        # from googleapiclient.discovery import build
+        # service = build("customsearch", "v1", developerKey=os.environ.get("GOOGLE_API_KEY"))
+        # res = service.cse().list(q=query, cx=os.environ.get("GOOGLE_CSE_ID"), num=num_results).execute()
+        # results = []
+        # if "items" in res:
+        #     for item in res["items"]:
+        #         results.append({
+        #             "title": item.get("title", ""),
+        #             "url": item.get("link", ""),
+        #             "snippet": item.get("snippet", "")
+        #         })
+        # return results
+        
+        # For now, return an empty list to avoid dummy links
+        print_progress("Web search functionality not implemented yet. Returning empty results.", "⚠️", "bold", "yellow")
+        return []
+        
+    except Exception as e:
+        print_progress(f"Error searching the web: {str(e)}", "❌", "bold", "red")
+        return []
 
 def parse_diff(diff_content: str) -> Dict[str, Any]:
     """
