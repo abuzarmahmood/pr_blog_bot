@@ -271,8 +271,10 @@ class BlogGenerator:
         
         The blog post should:
         1. Have a catchy title
-        2. Include an introduction explaining the purpose of the changes
-        3. IMPORTANT: Include the date of the PR ({pr_info['pr_formatted_date']}) in the introduction or metadata section
+        2. IMPORTANT: Start with a metadata section at the top that includes:
+           - The date of the PR in bold: **Date: {pr_info['pr_formatted_date']}**
+           - The contributors in bold: **Contributors: {', '.join(pr_info['contributors'])}**
+        3. Include an introduction explaining the purpose of the changes
         4. Highlight the key technical aspects of the changes
         5. Explain the impact or benefits of these changes
         6. Include code examples where relevant
@@ -311,8 +313,9 @@ class BlogGenerator:
         # Check if the blog post already contains an image
         has_image = "![" in blog_post and "](" in blog_post
         
-        # Check if the blog post already contains the PR date
+        # Check if the blog post already contains the PR date and contributors
         has_date = pr_info['pr_formatted_date'] in blog_post
+        has_contributors = "**Contributors:" in blog_post
         
         # Create a prompt to enhance the blog post
         prompt = f"""
@@ -328,7 +331,8 @@ class BlogGenerator:
         Add a "Related Resources" section at the end with links to the most relevant resources.
         
         {"" if has_image else "IMPORTANT: The blog post MUST include at least one relevant image. Add an appropriate image using Markdown image syntax (![alt text](image_url))."}
-        {"" if has_date else f"IMPORTANT: Make sure to include the PR date ({pr_info['pr_formatted_date']}) in the blog post, typically in the introduction or metadata section."}
+        {"" if has_date else f"IMPORTANT: Make sure to include the PR date ({pr_info['pr_formatted_date']}) in bold at the top of the blog post: **Date: {pr_info['pr_formatted_date']}**"}
+        {"" if has_contributors else f"IMPORTANT: Make sure to include the contributors in bold at the top of the blog post: **Contributors: {', '.join(pr_info['contributors'])}**"}
         
         Keep the blog post in Markdown format.
         """
@@ -367,14 +371,16 @@ class BlogGenerator:
         {new_input}
         
         Keep the blog post in Markdown format.
-        Make sure the PR date is included in the blog post, typically in the introduction or metadata section.
+        Make sure the blog post includes:
+        - The PR date in bold at the top: **Date: {pr_info['pr_formatted_date']}**
+        - The contributors in bold at the top: **Contributors: {', '.join(pr_info['contributors'])}**
         """
 
         print_progress("Updating blog post content with AI", "🤖", "bold", "green")
         # Call OpenAI API to update the blog post
         response = self.client.chat.completions.create(model="gpt-4",  # or another appropriate model
         messages=[
-            {"role": "system", "content": "You are a technical writer updating a blog post with new information. Always ensure the PR date is included in the blog post."},
+            {"role": "system", "content": "You are a technical writer updating a blog post with new information. Always ensure the PR date and contributors are included in bold at the top of the blog post."},
             {"role": "user", "content": prompt}
         ],
         max_tokens=2000,
