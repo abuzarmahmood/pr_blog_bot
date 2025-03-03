@@ -349,13 +349,14 @@ class BlogGenerator:
 
         return response.choices[0].message.content
 
-    def update_blog_post(self, blog_post: str, new_input: str) -> str:
+    def update_blog_post(self, blog_post: str, new_input: str, pr_info: Dict[str, Any]) -> str:
         """
         Update an existing blog post with new information or direction
         
         Args:
             blog_post: Original blog post content
             new_input: New information or direction
+            pr_info: Dictionary with PR information
             
         Returns:
             Updated blog post content
@@ -424,11 +425,14 @@ def main():
         if not os.path.exists(args.update):
             parser.error(f"Blog post file {args.update} does not exist")
 
+        # Collect PR information first
+        pr_info = generator.collect_pr_info(repo_owner, repo_name, args.pr)
+        
         print_progress(f"Reading existing blog post from {args.update}", "📄", "bold", "blue")
         with open(args.update, "r") as f:
             existing_blog_post = f.read()
 
-        updated_blog_post = generator.update_blog_post(existing_blog_post, args.direction or "")
+        updated_blog_post = generator.update_blog_post(existing_blog_post, args.direction or "", pr_info)
 
         output_file = args.update
         print_progress(f"Saving updated blog post", "💾", "bold", "green")
