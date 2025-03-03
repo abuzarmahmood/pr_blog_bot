@@ -161,10 +161,10 @@ class BlogGenerator:
         # Call OpenAI API to generate the blog post
         response = self.client.chat.completions.create(model="gpt-4",  # or another appropriate model
         messages=[
-            {"role": "system", "content": "You are a technical writer creating a blog post about code changes. Always include at least one relevant image in your blog posts. Always include the date of the PR in your blog post, typically in the introduction or in a metadata section at the top."},
+            {"role": "system", "content": "You are a technical writer creating a blog post about code changes. Always include at least one relevant image in your blog posts. Always include the date of the PR in your blog post, typically in the introduction or in a metadata section at the top. When analyzing code diffs, explain the key changes and their implications."},
             {"role": "user", "content": prompt}
         ],
-        max_tokens=2000,
+        max_tokens=4000,
         temperature=0.7)
         
         blog_content = response.choices[0].message.content
@@ -262,6 +262,11 @@ class BlogGenerator:
         
         Key files changed:
         {', '.join(pr_info['diff_summary']['files_changed'][:5])}
+        
+        Code diff (first 4000 characters):
+        ```diff
+        {pr_info['diff_content'][:4000]}
+        ```
         """
 
         if user_direction:
