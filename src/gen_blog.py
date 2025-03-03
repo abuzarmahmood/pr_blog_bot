@@ -114,7 +114,7 @@ class BlogGenerator:
 
     def generate_image(self, prompt: str, size: str = "1024x1024", model: str = "dall-e-3") -> Optional[str]:
         """
-        Generate an image using OpenAI's DALL-E API
+        Generate an image using OpenAI's DALL-E API and save it locally
         
         Args:
             prompt: Text description of the desired image
@@ -122,7 +122,7 @@ class BlogGenerator:
             model: Model to use (dall-e-2 or dall-e-3)
             
         Returns:
-            URL of the generated image, or None if generation failed
+            Local path of the saved image, or None if generation failed
         """
         print_progress("Generating custom image with DALL-E", "🎨", "bold", "magenta")
         try:
@@ -137,7 +137,18 @@ class BlogGenerator:
             # Extract the image URL from the response
             image_url = response.data[0].url
             print_progress("Image generated successfully", "✅", "bold", "green")
-            return image_url
+            
+            # Create a safe filename from the prompt
+            safe_filename = "".join(c if c.isalnum() else "_" for c in prompt[:50])
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            local_image_path = f"images/{timestamp}_{safe_filename}.png"
+            
+            # Download the image to local storage
+            from utils import download_image
+            if download_image(image_url, local_image_path):
+                return local_image_path
+            else:
+                return image_url  # Fallback to URL if download fails
         except Exception as e:
             print_progress(f"Failed to generate image: {str(e)}", "⚠️", "bold", "red")
             return None
