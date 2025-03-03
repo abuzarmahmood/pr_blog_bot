@@ -215,17 +215,49 @@ def download_image(image_url: str, save_path: str) -> bool:
         # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         
-        # Download the image
-        response = requests.get(image_url, stream=True)
-        response.raise_for_status()
+        # Validate the URL
+        if not image_url or not image_url.startswith(('http://', 'https://')):
+            print_progress(f"Invalid image URL: {image_url}", "❌", "bold", "red")
+            return False
+            
+        # Download the image with timeout and retries
+        max_retries = 3
+        retry_count = 0
         
-        # Save the image to the specified path
-        with open(save_path, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
+        while retry_count < max_retries:
+            try:
+                response = requests.get(image_url, stream=True, timeout=30)
+                response.raise_for_status()
                 
-        print_progress(f"Image downloaded successfully to {save_path}", "✅", "bold", "green")
-        return True
+                # Verify content type is an image
+                content_type = response.headers.get('Content-Type', '')
+                if not content_type.startswith('image/'):
+                    print_progress(f"URL does not point to an image. Content-Type: {content_type}", "❌", "bold", "red")
+                    return False
+                
+                # Save the image to the specified path
+                with open(save_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                
+                # Verify the file was created and has content
+                if os.path.exists(save_path) and os.path.getsize(save_path) > 0:
+                    print_progress(f"Image downloaded successfully to {save_path}", "✅", "bold", "green")
+                    return True
+                else:
+                    print_progress(f"Image file is empty or not created", "❌", "bold", "red")
+                    retry_count += 1
+                    
+            except requests.exceptions.Timeout:
+                print_progress(f"Timeout downloading image, retry {retry_count+1}/{max_retries}", "⚠️", "bold", "yellow")
+                retry_count += 1
+            except requests.exceptions.RequestException as e:
+                print_progress(f"Request error: {str(e)}, retry {retry_count+1}/{max_retries}", "⚠️", "bold", "yellow")
+                retry_count += 1
+                
+        print_progress(f"Failed to download image after {max_retries} attempts", "❌", "bold", "red")
+        return False
+        
     except Exception as e:
         print_progress(f"Failed to download image: {str(e)}", "❌", "bold", "red")
         return False
