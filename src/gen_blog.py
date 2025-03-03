@@ -97,6 +97,18 @@ class BlogGenerator:
         else:
             formatted_date = ""
 
+        # Extract detailed commit messages for more context
+        detailed_commit_messages = []
+        for commit in commits:
+            message = commit.get("commit", {}).get("message", "")
+            author = commit.get("commit", {}).get("author", {}).get("name", "")
+            date = commit.get("commit", {}).get("author", {}).get("date", "")
+            detailed_commit_messages.append({
+                "message": message,
+                "author": author,
+                "date": date
+            })
+            
         return {
             "pr_title": pr_data.get("title", ""),
             "pr_description": pr_data.get("body", ""),
@@ -107,6 +119,7 @@ class BlogGenerator:
             "pr_url": pr_data.get("html_url", ""),
             "commits": commits,
             "commit_summary": commit_summary,
+            "detailed_commit_messages": detailed_commit_messages,
             "diff_summary": diff_summary,
             "diff_content": diff_content,
             "contributors": list(contributors)
@@ -170,12 +183,12 @@ class BlogGenerator:
 
         print_progress("Generating blog post content with AI", "🤖", "bold", "cyan")
         # Call OpenAI API to generate the blog post
-        response = self.client.chat.completions.create(model="gpt-4",  # or another appropriate model
+        response = self.client.chat.completions.create(model="gpt-4o-2024-08-06",  # or another appropriate model
         messages=[
-            {"role": "system", "content": "You are a technical writer creating a blog post about code changes. Always include at least one relevant image in your blog posts. Always include the date of the PR in your blog post, typically in the introduction or in a metadata section at the top. When analyzing code diffs, explain the key changes and their implications. Never include placeholder or dummy links - only include real and relevant links."},
+            {"role": "system", "content": "You are a technical writer creating a blog post about code changes. Always include at least one relevant image in your blog posts. Always include the date of the PR in your blog post, typically in the introduction or in a metadata section at the top. When analyzing code diffs, explain the key changes and their implications. Never include placeholder or dummy links - only include real and relevant links. Create detailed, comprehensive content that thoroughly explains the technical aspects."},
             {"role": "user", "content": prompt}
         ],
-        max_tokens=4000,
+        max_tokens=6000,
         temperature=0.7)
         
         blog_content = response.choices[0].message.content
@@ -225,12 +238,12 @@ class BlogGenerator:
             """
             
             # Call OpenAI API again to add an image
-            image_response = self.client.chat.completions.create(model="gpt-4",
+            image_response = self.client.chat.completions.create(model="gpt-4o-2024-08-06",
             messages=[
-                {"role": "system", "content": "You are a technical writer enhancing a blog post with images."},
+                {"role": "system", "content": "You are a technical writer enhancing a blog post with images. Ensure the content is detailed and comprehensive."},
                 {"role": "user", "content": follow_up_prompt}
             ],
-            max_tokens=2000,
+            max_tokens=3000,
             temperature=0.7)
             
             blog_content = image_response.choices[0].message.content
@@ -278,6 +291,9 @@ class BlogGenerator:
         Commit summary:
         {pr_info['commit_summary']}
         
+        Detailed commit messages:
+        {json.dumps([f"{cm['author']} - {cm['message']}" for cm in pr_info['detailed_commit_messages']], indent=2)}
+        
         Key files changed:
         {', '.join(pr_info['diff_summary']['files_changed'][:5])}
         
@@ -309,11 +325,13 @@ class BlogGenerator:
            - The date of the PR in bold: **Date: {pr_info['pr_formatted_date']}**
            - The contributors in bold: **Contributors: {', '.join(pr_info['contributors'])}**
            - A link to the PR in bold: **PR: [{pr_info['pr_url']}]({pr_info['pr_url']})**
-        3. Include an introduction explaining the purpose of the changes
-        4. Highlight the key technical aspects of the changes
-        5. Explain the impact or benefits of these changes
-        6. Include code examples where relevant
-        7. End with a conclusion
+        3. Include a detailed introduction explaining the purpose of the changes
+        4. Highlight the key technical aspects of the changes with in-depth explanations
+        5. Explain the impact or benefits of these changes with concrete examples
+        6. Include multiple code examples where relevant, with thorough explanations
+        7. Discuss any challenges or interesting decisions made during development
+        8. Provide context about how these changes fit into the broader project
+        9. End with a comprehensive conclusion and potential future directions
         
         Format the blog post in Markdown. Don't worry about including images - I'll handle that separately.
         Focus on creating high-quality, informative content about the technical changes.
@@ -372,6 +390,9 @@ class BlogGenerator:
         
         Enhance the blog post by incorporating relevant information from these resources.
         Add a "Related Resources" section at the end with links to the most relevant resources.
+        Significantly expand the technical explanations with additional context and examples.
+        Add new sections if they would improve the comprehensiveness of the blog post.
+        Include more detailed code explanations and technical insights from the resources.
         """
         else:
             prompt += """
@@ -390,12 +411,12 @@ class BlogGenerator:
 
         print_progress("Enhancing blog post with web content", "🔍", "bold", "magenta")
         # Call OpenAI API to enhance the blog post
-        response = self.client.chat.completions.create(model="gpt-4",  # or another appropriate model
+        response = self.client.chat.completions.create(model="gpt-4o-2024-08-06",  # or another appropriate model
         messages=[
-            {"role": "system", "content": "You are a technical writer enhancing a blog post with additional information. If web search results are provided, only include links that are real and relevant. Never include placeholder or dummy links."},
+            {"role": "system", "content": "You are a technical writer enhancing a blog post with additional information. If web search results are provided, only include links that are real and relevant. Never include placeholder or dummy links. Your goal is to create comprehensive, detailed content that thoroughly explains technical concepts and provides valuable insights. Expand sections that could benefit from more detail and add new sections if relevant."},
             {"role": "user", "content": prompt}
         ],
-        max_tokens=2000,
+        max_tokens=4000,
         temperature=0.7)
 
         return response.choices[0].message.content
@@ -431,12 +452,12 @@ class BlogGenerator:
 
         print_progress("Updating blog post content with AI", "🤖", "bold", "green")
         # Call OpenAI API to update the blog post
-        response = self.client.chat.completions.create(model="gpt-4",  # or another appropriate model
+        response = self.client.chat.completions.create(model="gpt-4o-2024-08-06",  # or another appropriate model
         messages=[
-            {"role": "system", "content": "You are a technical writer updating a blog post with new information. Always ensure the PR date, contributors, and PR link are included in bold at the top of the blog post."},
+            {"role": "system", "content": "You are a technical writer updating a blog post with new information. Always ensure the PR date, contributors, and PR link are included in bold at the top of the blog post. Create comprehensive, detailed content that thoroughly explains technical concepts. Expand sections that need more detail and add new sections if they would improve the blog post."},
             {"role": "user", "content": prompt}
         ],
-        max_tokens=2000,
+        max_tokens=4000,
         temperature=0.7)
 
         return response.choices[0].message.content
