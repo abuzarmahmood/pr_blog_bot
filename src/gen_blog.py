@@ -170,7 +170,7 @@ class BlogGenerator:
 
         print_progress("Generating blog post content with AI", "🤖", "bold", "cyan")
         # Call OpenAI API to generate the blog post
-        response = self.client.chat.completions.create(model="gpt-4",  # or another appropriate model
+        response = self.client.chat.completions.create(model="gpt-4o-2024-08-06",  # or another appropriate model
         messages=[
             {"role": "system", "content": "You are a technical writer creating a blog post about code changes. Always include at least one relevant image in your blog posts. Always include the date of the PR in your blog post, typically in the introduction or in a metadata section at the top. When analyzing code diffs, explain the key changes and their implications. Never include placeholder or dummy links - only include real and relevant links."},
             {"role": "user", "content": prompt}
@@ -225,7 +225,7 @@ class BlogGenerator:
             """
             
             # Call OpenAI API again to add an image
-            image_response = self.client.chat.completions.create(model="gpt-4",
+            image_response = self.client.chat.completions.create(model="gpt-4o-2024-08-06",
             messages=[
                 {"role": "system", "content": "You are a technical writer enhancing a blog post with images."},
                 {"role": "user", "content": follow_up_prompt}
@@ -390,7 +390,7 @@ class BlogGenerator:
 
         print_progress("Enhancing blog post with web content", "🔍", "bold", "magenta")
         # Call OpenAI API to enhance the blog post
-        response = self.client.chat.completions.create(model="gpt-4",  # or another appropriate model
+        response = self.client.chat.completions.create(model="gpt-4o-2024-08-06",  # or another appropriate model
         messages=[
             {"role": "system", "content": "You are a technical writer enhancing a blog post with additional information. If web search results are provided, only include links that are real and relevant. Never include placeholder or dummy links."},
             {"role": "user", "content": prompt}
@@ -431,7 +431,7 @@ class BlogGenerator:
 
         print_progress("Updating blog post content with AI", "🤖", "bold", "green")
         # Call OpenAI API to update the blog post
-        response = self.client.chat.completions.create(model="gpt-4",  # or another appropriate model
+        response = self.client.chat.completions.create(model="gpt-4o-2024-08-06",  # or another appropriate model
         messages=[
             {"role": "system", "content": "You are a technical writer updating a blog post with new information. Always ensure the PR date, contributors, and PR link are included in bold at the top of the blog post."},
             {"role": "user", "content": prompt}
