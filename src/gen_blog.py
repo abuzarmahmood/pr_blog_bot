@@ -161,7 +161,7 @@ class BlogGenerator:
         # Call OpenAI API to generate the blog post
         response = self.client.chat.completions.create(model="gpt-4",  # or another appropriate model
         messages=[
-            {"role": "system", "content": "You are a technical writer creating a blog post about code changes. Always include at least one relevant image in your blog posts. Always include the date of the PR in your blog post, typically in the introduction or in a metadata section at the top. When analyzing code diffs, explain the key changes and their implications."},
+            {"role": "system", "content": "You are a technical writer creating a blog post about code changes. Always include at least one relevant image in your blog posts. Always include the date of the PR in your blog post, typically in the introduction or in a metadata section at the top. When analyzing code diffs, explain the key changes and their implications. Never include placeholder or dummy links - only include real and relevant links."},
             {"role": "user", "content": prompt}
         ],
         max_tokens=4000,
@@ -237,6 +237,13 @@ class BlogGenerator:
         Returns:
             Prompt for the LLM
         """
+        # Create a search query based on PR info to get relevant web content
+        search_query = f"{pr_info['pr_title']} {' '.join(pr_info['diff_summary']['languages'])}"
+        
+        # Search the web for relevant content
+        print_progress("Searching for relevant technical context", "🔍", "bold", "blue")
+        search_results = search_web(search_query)
+        
         prompt = f"""
         Write a technical blog post about the following GitHub pull request:
         
@@ -268,11 +275,22 @@ class BlogGenerator:
         {pr_info['diff_content'][:4000]}
         ```
         """
+        
+        # Add relevant web content if available
+        if search_results:
+            prompt += f"""
+            
+            Relevant technical context from the web:
+            {json.dumps(search_results, indent=2)}
+            
+            You may incorporate this information if relevant, but DO NOT include any placeholder or dummy links in your blog post.
+            Only include links that are real and relevant to the topic.
+            """
 
         if user_direction:
             prompt += f"\n\nAdditional direction for the blog post:\n{user_direction}"
 
-        prompt += """
+        prompt += f"""
         
         The blog post should:
         1. Have a catchy title
@@ -289,6 +307,8 @@ class BlogGenerator:
         Focus on creating high-quality, informative content about the technical changes.
         
         For technical topics, consider including code snippets, explanations of algorithms, or architectural decisions.
+        
+        IMPORTANT: If you reference external resources, only include real and relevant links. Do not include placeholder or dummy links.
         """
 
         return prompt
@@ -327,6 +347,11 @@ class BlogGenerator:
         Here is a blog post:
         
         {blog_post}
+        """
+        
+        # Only include web resources section if we actually have results
+        if search_results:
+            prompt += f"""
         
         Here are some related resources from the web:
         
@@ -334,7 +359,14 @@ class BlogGenerator:
         
         Enhance the blog post by incorporating relevant information from these resources.
         Add a "Related Resources" section at the end with links to the most relevant resources.
+        """
+        else:
+            prompt += """
         
+        Enhance the blog post by improving its structure, clarity, and technical depth.
+        """
+            
+        prompt += f"""
         {"" if has_image else "IMPORTANT: The blog post MUST include at least one relevant image. Add an appropriate image using Markdown image syntax (![alt text](image_url))."}
         {"" if has_date else f"IMPORTANT: Make sure to include the PR date ({pr_info['pr_formatted_date']}) in bold at the top of the blog post: **Date: {pr_info['pr_formatted_date']}**"}
         {"" if has_contributors else f"IMPORTANT: Make sure to include the contributors in bold at the top of the blog post: **Contributors: {', '.join(pr_info['contributors'])}**"}
@@ -346,7 +378,7 @@ class BlogGenerator:
         # Call OpenAI API to enhance the blog post
         response = self.client.chat.completions.create(model="gpt-4",  # or another appropriate model
         messages=[
-            {"role": "system", "content": "You are a technical writer enhancing a blog post with additional information."},
+            {"role": "system", "content": "You are a technical writer enhancing a blog post with additional information. If web search results are provided, only include links that are real and relevant. Never include placeholder or dummy links."},
             {"role": "user", "content": prompt}
         ],
         max_tokens=2000,
