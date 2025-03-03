@@ -7,7 +7,7 @@ import os
 from typing import Dict, List, Optional, Any
 from openai import OpenAI
 
-from datetime import datetime
+from datetime import datetime, fromisoformat
 from dotenv import load_dotenv
 
 from utils import (
@@ -69,18 +69,47 @@ class BlogGenerator:
         print_progress("Summarizing commit messages", "📝", "bold", "green")
         # Summarize commits
         commit_summary = summarize_commits(commits)
+        
+        # Extract all contributors from commits
+        contributors = set()
+        for commit in commits:
+            author = commit.get("commit", {}).get("author", {}).get("name", "")
+            committer = commit.get("commit", {}).get("committer", {}).get("name", "")
+            if author:
+                contributors.add(author)
+            if committer and committer != author:
+                contributors.add(committer)
+        
+        # Add PR author if not already in contributors
+        pr_author = pr_data.get("user", {}).get("login", "")
+        if pr_author:
+            contributors.add(pr_author)
+            
+        # Format date for better readability
+        created_date = pr_data.get("created_at", "")
+        if created_date:
+            try:
+                # Convert ISO format to more readable format
+                created_date_obj = datetime.fromisoformat(created_date.replace('Z', '+00:00'))
+                formatted_date = created_date_obj.strftime("%B %d, %Y")
+            except:
+                formatted_date = created_date
+        else:
+            formatted_date = ""
 
         return {
             "pr_title": pr_data.get("title", ""),
             "pr_description": pr_data.get("body", ""),
-            "pr_author": pr_data.get("user", {}).get("login", ""),
+            "pr_author": pr_author,
             "pr_created_at": pr_data.get("created_at", ""),
+            "pr_formatted_date": formatted_date,
             "pr_updated_at": pr_data.get("updated_at", ""),
             "pr_url": pr_data.get("html_url", ""),
             "commits": commits,
             "commit_summary": commit_summary,
             "diff_summary": diff_summary,
-            "diff_content": diff_content
+            "diff_content": diff_content,
+            "contributors": list(contributors)
         }
 
     def generate_blog_post(self, pr_info: Dict[str, Any], user_direction: Optional[str] = None) -> str:
@@ -130,8 +159,10 @@ class BlogGenerator:
         {pr_info['pr_description']}
         
         Author: {pr_info['pr_author']}
-        Created: {pr_info['pr_created_at']}
+        Created: {pr_info['pr_formatted_date']} ({pr_info['pr_created_at']})
         URL: {pr_info['pr_url']}
+        
+        Contributors: {', '.join(pr_info['contributors'])}
         
         Summary of changes:
         - Files changed: {pr_info['diff_summary']['file_count']}
