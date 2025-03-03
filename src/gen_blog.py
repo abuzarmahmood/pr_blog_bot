@@ -161,7 +161,7 @@ class BlogGenerator:
         # Call OpenAI API to generate the blog post
         response = self.client.chat.completions.create(model="gpt-4",  # or another appropriate model
         messages=[
-            {"role": "system", "content": "You are a technical writer creating a blog post about code changes. Always include at least one relevant image in your blog posts."},
+            {"role": "system", "content": "You are a technical writer creating a blog post about code changes. Always include at least one relevant image in your blog posts. Always include the date of the PR in your blog post, typically in the introduction or in a metadata section at the top."},
             {"role": "user", "content": prompt}
         ],
         max_tokens=2000,
@@ -272,10 +272,11 @@ class BlogGenerator:
         The blog post should:
         1. Have a catchy title
         2. Include an introduction explaining the purpose of the changes
-        3. Highlight the key technical aspects of the changes
-        4. Explain the impact or benefits of these changes
-        5. Include code examples where relevant
-        6. End with a conclusion
+        3. IMPORTANT: Include the date of the PR ({pr_info['pr_formatted_date']}) in the introduction or metadata section
+        4. Highlight the key technical aspects of the changes
+        5. Explain the impact or benefits of these changes
+        6. Include code examples where relevant
+        7. End with a conclusion
         
         Format the blog post in Markdown. Don't worry about including images - I'll handle that separately.
         Focus on creating high-quality, informative content about the technical changes.
@@ -310,6 +311,9 @@ class BlogGenerator:
         # Check if the blog post already contains an image
         has_image = "![" in blog_post and "](" in blog_post
         
+        # Check if the blog post already contains the PR date
+        has_date = pr_info['pr_formatted_date'] in blog_post
+        
         # Create a prompt to enhance the blog post
         prompt = f"""
         Here is a blog post:
@@ -324,6 +328,7 @@ class BlogGenerator:
         Add a "Related Resources" section at the end with links to the most relevant resources.
         
         {"" if has_image else "IMPORTANT: The blog post MUST include at least one relevant image. Add an appropriate image using Markdown image syntax (![alt text](image_url))."}
+        {"" if has_date else f"IMPORTANT: Make sure to include the PR date ({pr_info['pr_formatted_date']}) in the blog post, typically in the introduction or metadata section."}
         
         Keep the blog post in Markdown format.
         """
@@ -362,13 +367,14 @@ class BlogGenerator:
         {new_input}
         
         Keep the blog post in Markdown format.
+        Make sure the PR date is included in the blog post, typically in the introduction or metadata section.
         """
 
         print_progress("Updating blog post content with AI", "🤖", "bold", "green")
         # Call OpenAI API to update the blog post
         response = self.client.chat.completions.create(model="gpt-4",  # or another appropriate model
         messages=[
-            {"role": "system", "content": "You are a technical writer updating a blog post with new information."},
+            {"role": "system", "content": "You are a technical writer updating a blog post with new information. Always ensure the PR date is included in the blog post."},
             {"role": "user", "content": prompt}
         ],
         max_tokens=2000,
