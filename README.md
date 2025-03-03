@@ -43,3 +43,55 @@ python src/cli.py --repo owner/repo --pr 123 --enhance
 - `--output`: Custom output file path
 - `--enhance`: Add web research to enrich content
 - `--update`: Path to existing blog post to update
+
+## 🔄 Example Workflows
+
+### Basic Blog Generation
+
+Generate a simple blog post from a pull request:
+
+```bash
+python src/cli.py --repo facebook/react --pr 12345 --output blog_react_hooks.md
+```
+
+### Enhanced Blog with Research
+
+Create a more comprehensive post with web research integration:
+
+```bash
+python src/cli.py --repo tensorflow/tensorflow --pr 54321 --enhance --output tensorflow_feature.md
+```
+
+### Focused Content Direction
+
+Guide the AI to focus on specific aspects of the PR:
+
+```bash
+python src/cli.py --repo kubernetes/kubernetes --pr 98765 \
+  --direction "Focus on security implications and best practices" \
+  --output k8s_security_post.md
+```
+
+### Update Existing Content
+
+Update a previously generated blog post with new information:
+
+```bash
+python src/cli.py --repo django/django --pr 24680 \
+  --update previous_django_post.md \
+  --direction "Include the new performance benchmarks"
+```
+
+### Complete Workflow Example
+
+A comprehensive workflow that combines multiple features:
+
+```bash
+# First, generate an initial blog post
+python src/cli.py --repo pytorch/pytorch --pr 13579 --enhance --output pytorch_feature.md
+
+# Later, update it with new information
+python src/cli.py --repo pytorch/pytorch --pr 13579 \
+  --update pytorch_feature.md \
+  --direction "Add information about the new benchmarks and community feedback"
+```
