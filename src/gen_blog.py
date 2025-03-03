@@ -7,6 +7,7 @@ import os
 from typing import Dict, List, Optional, Any
 import openai
 from datetime import datetime
+from dotenv import load_dotenv
 
 from utils import (
     fetch_pr_data,
@@ -29,6 +30,9 @@ class BlogGenerator:
         Args:
             openai_api_key: OpenAI API key (optional, will use environment variable if not provided)
         """
+        # Load environment variables from .env file
+        load_dotenv()
+        
         if openai_api_key:
             openai.api_key = openai_api_key
         else:

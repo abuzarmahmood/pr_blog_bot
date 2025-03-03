@@ -23,7 +23,11 @@ Turn your GitHub pull requests into polished, professional blog posts with this 
 ## 🚦 Getting Started
 
 ```bash
-# Set required environment variables
+# Create a .env file with your API keys
+echo "GITHUB_TOKEN=your_github_token" > .env
+echo "OPENAI_API_KEY=your_openai_api_key" >> .env
+
+# Or set environment variables directly
 export GITHUB_TOKEN=your_github_token
 export OPENAI_API_KEY=your_openai_api_key
 

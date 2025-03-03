@@ -5,6 +5,10 @@ import requests
 import re
 from typing import Dict, List, Optional, Tuple, Any
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 def fetch_pr_data(repo_owner: str, repo_name: str, pr_number: int) -> Dict[str, Any]:
     """
