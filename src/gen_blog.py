@@ -7,7 +7,7 @@ import os
 from typing import Dict, List, Optional, Any
 from openai import OpenAI
 
-from datetime import datetime, fromisoformat
+from datetime import datetime
 from dotenv import load_dotenv
 
 from utils import (
