@@ -131,13 +131,46 @@ class BlogGenerator:
         # Call OpenAI API to generate the blog post
         response = self.client.chat.completions.create(model="gpt-4",  # or another appropriate model
         messages=[
-            {"role": "system", "content": "You are a technical writer creating a blog post about code changes."},
+            {"role": "system", "content": "You are a technical writer creating a blog post about code changes. Always include at least one relevant image in your blog posts."},
             {"role": "user", "content": prompt}
         ],
         max_tokens=2000,
         temperature=0.7)
+        
+        blog_content = response.choices[0].message.content
+        
+        # Verify that the blog post contains an image
+        if "![" not in blog_content or "](" not in blog_content:
+            print_progress("Adding image to blog post", "🖼️", "bold", "yellow")
+            # If no image is present, add a request to include one
+            follow_up_prompt = f"""
+            The blog post you generated doesn't include an image. Please add at least one relevant image using Markdown syntax.
+            
+            Here's the blog post:
+            
+            {blog_content}
+            
+            You can use images from:
+            - https://unsplash.com/ (for high-quality free stock photos)
+            - https://shields.io/ (for badges and status shields)
+            - https://mermaid.live/ (for diagrams)
+            - https://carbon.now.sh/ (for code screenshots)
+            
+            Return the complete blog post with at least one image added.
+            """
+            
+            # Call OpenAI API again to add an image
+            image_response = self.client.chat.completions.create(model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a technical writer enhancing a blog post with images."},
+                {"role": "user", "content": follow_up_prompt}
+            ],
+            max_tokens=2000,
+            temperature=0.7)
+            
+            blog_content = image_response.choices[0].message.content
 
-        return response.choices[0].message.content
+        return blog_content
 
     def _create_blog_prompt(self, pr_info: Dict[str, Any], user_direction: Optional[str] = None) -> str:
         """
@@ -188,9 +221,17 @@ class BlogGenerator:
         3. Highlight the key technical aspects of the changes
         4. Explain the impact or benefits of these changes
         5. Include code examples where relevant
-        6. End with a conclusion
+        6. Include at least one relevant image with proper Markdown syntax (![alt text](image_url))
+        7. End with a conclusion
         
-        Format the blog post in Markdown.
+        Format the blog post in Markdown. Make sure to include at least one relevant image using Markdown image syntax.
+        You can use images from these sources:
+        - https://unsplash.com/ (for high-quality free stock photos)
+        - https://shields.io/ (for badges and status shields)
+        - https://mermaid.live/ (for diagrams, use mermaid syntax)
+        - https://carbon.now.sh/ (for code screenshots)
+        
+        For technical topics, consider including diagrams, flowcharts, or screenshots that illustrate the concepts.
         """
 
         return prompt
@@ -217,6 +258,9 @@ class BlogGenerator:
             print_progress("No relevant web content found", "⚠️", "bold", "yellow")
             return blog_post
 
+        # Check if the blog post already contains an image
+        has_image = "![" in blog_post and "](" in blog_post
+        
         # Create a prompt to enhance the blog post
         prompt = f"""
         Here is a blog post:
@@ -229,6 +273,9 @@ class BlogGenerator:
         
         Enhance the blog post by incorporating relevant information from these resources.
         Add a "Related Resources" section at the end with links to the most relevant resources.
+        
+        {"" if has_image else "IMPORTANT: The blog post MUST include at least one relevant image. Add an appropriate image using Markdown image syntax (![alt text](image_url))."}
+        
         Keep the blog post in Markdown format.
         """
 
