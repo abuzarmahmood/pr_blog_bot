@@ -41,25 +41,25 @@ python src/cli.py --repo owner/repo --pr 123 --enhance
 - `--pr`: Pull request number
 - `--direction`: Custom direction for blog post focus
 - `--output`: Custom output file path
-- `--enhance`: Add web research to enrich content
+- `--no-enhance`: Skip adding web research to enrich content (enhancement is on by default)
 - `--update`: Path to existing blog post to update
 
 ## 🔄 Example Workflows
 
 ### Basic Blog Generation
 
-Generate a simple blog post from a pull request:
+Generate a blog post from a pull request (includes web research by default):
 
 ```bash
 python src/cli.py --repo facebook/react --pr 12345 --output blog_react_hooks.md
 ```
 
-### Enhanced Blog with Research
+### Blog Without Web Research
 
-Create a more comprehensive post with web research integration:
+Create a simpler post without web research integration:
 
 ```bash
-python src/cli.py --repo tensorflow/tensorflow --pr 54321 --enhance --output tensorflow_feature.md
+python src/cli.py --repo tensorflow/tensorflow --pr 54321 --no-enhance --output tensorflow_feature.md
 ```
 
 ### Focused Content Direction
@@ -88,7 +88,7 @@ A comprehensive workflow that combines multiple features:
 
 ```bash
 # First, generate an initial blog post
-python src/cli.py --repo pytorch/pytorch --pr 13579 --enhance --output pytorch_feature.md
+python src/cli.py --repo pytorch/pytorch --pr 13579 --output pytorch_feature.md
 
 # Later, update it with new information
 python src/cli.py --repo pytorch/pytorch --pr 13579 \

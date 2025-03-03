@@ -262,7 +262,7 @@ def main():
     parser.add_argument("--pr", required=True, type=int, help="Pull request number")
     parser.add_argument("--direction", help="Direction for the blog post")
     parser.add_argument("--output", help="Output file path (default: blog_post_{pr_number}_{date}.md)")
-    parser.add_argument("--enhance", action="store_true", help="Enhance the blog post with web content")
+    parser.add_argument("--no-enhance", action="store_true", help="Skip enhancing the blog post with web content")
     parser.add_argument("--update", help="Update an existing blog post with new information")
 
     args = parser.parse_args()
@@ -305,8 +305,8 @@ def main():
     # Generate blog post
     blog_post = generator.generate_blog_post(pr_info, args.direction)
 
-    # Enhance with web content if requested
-    if args.enhance:
+    # Enhance with web content by default, unless --no-enhance is specified
+    if not args.no_enhance:
         print_progress("Enhancing blog post with web research", "🔎", "bold", "blue")
         blog_post = generator.enhance_with_web_content(blog_post, pr_info)
 
