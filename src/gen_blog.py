@@ -237,7 +237,7 @@ class BlogGenerator:
                     blog_content = f"![{image_caption}]({image_url})\n\n" + blog_content
         
         # If we couldn't generate an image or add it properly, fall back to the old method
-        elif "![" not in blog_content or "](" not in blog_content:
+        if "![" not in blog_content or "](" not in blog_content:
             print_progress("Adding image to blog post (fallback method)", "🖼️", "bold", "yellow")
             # If no image is present, add a request to include one
             follow_up_prompt = f"""
