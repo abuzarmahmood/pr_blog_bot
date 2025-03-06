@@ -169,13 +169,16 @@ class BlogGenerator:
             print_progress(f"Failed to generate image: {str(e)}", "⚠️", "bold", "red")
             return None
 
-    def generate_blog_post(self, pr_info: Dict[str, Any], user_direction: Optional[str] = None) -> str:
+    def generate_blog_post(self, pr_info: Dict[str, Any], user_direction: Optional[str] = None, 
+                          header_image: Optional[str] = None, body_image: Optional[str] = None) -> str:
         """
         Generate a blog post based on PR information
         
         Args:
             pr_info: Dictionary with PR information
             user_direction: Optional user input on the direction of the blog post
+            header_image: Optional path to an image to include at the top of the blog post
+            body_image: Optional path to an image to include in the body of the blog post
             
         Returns:
             Generated blog post content
@@ -196,52 +199,48 @@ class BlogGenerator:
         
         blog_content = response.choices[0].message.content
         
-        # Generate a custom image for the blog post
-        image_prompt = f"Create a technical illustration for a blog post about: {pr_info['pr_title']}. " \
-                       f"The changes involve {', '.join(pr_info['diff_summary']['languages'])} code. " \
-                       f"Make it visually appealing and professional."
-        
-        image_url = self.generate_image(image_prompt, pr_info)
-        
-        # Always add the generated image to the blog post at the top
-        if image_url:
-            print_progress("Adding generated image to blog post", "🖼️", "bold", "yellow")
+        # Check if a header image was provided
+        if header_image:
+            print_progress("Adding user-provided header image to blog post", "🖼️", "bold", "green")
+            # Create image caption based on PR title
+            image_caption = f"Visual representation of {pr_info['pr_title']}"
             
-            # Create image caption based on PR title and number
-            pr_number = str(pr_info.get('pr_url', '').split('/')[-1])
-            image_caption = f"Visual representation of PR #{pr_number}: {pr_info['pr_title']}"
-            
-            # Add the image at the beginning of the blog post, after the title if present
+            # Add the header image at the beginning of the blog post, after the title if present
             if blog_content.startswith("#"):
                 # Find the end of the title line
                 title_end = blog_content.find("\n")
                 if title_end != -1:
-                    # Replace any existing image that might be right after the title
-                    next_section = blog_content[title_end+1:]
-                    if next_section.strip().startswith("!["):
-                        # Find the end of the existing image line
-                        image_end = next_section.find("\n")
-                        if image_end != -1:
-                            blog_content = blog_content[:title_end+1] + f"\n![{image_caption}]({image_url})\n\n" + next_section[image_end+1:]
-                        else:
-                            blog_content = blog_content[:title_end+1] + f"\n![{image_caption}]({image_url})\n\n"
-                    else:
-                        blog_content = blog_content[:title_end+1] + f"\n![{image_caption}]({image_url})\n\n" + next_section
+                    blog_content = blog_content[:title_end+1] + f"\n![{image_caption}]({header_image})\n\n" + blog_content[title_end+1:]
             else:
                 # If no title, add the image at the very beginning
-                # Check if the blog post already starts with an image
-                if blog_content.strip().startswith("!["):
-                    # Find the end of the existing image line
-                    image_end = blog_content.find("\n")
-                    if image_end != -1:
-                        blog_content = f"![{image_caption}]({image_url})\n\n" + blog_content[image_end+1:]
-                    else:
-                        blog_content = f"![{image_caption}]({image_url})\n\n"
+                blog_content = f"![{image_caption}]({header_image})\n\n" + blog_content
+        else:
+            # Generate a custom image for the blog post if no header image was provided
+            image_prompt = f"Create a technical illustration for a blog post about: {pr_info['pr_title']}. " \
+                           f"The changes involve {', '.join(pr_info['diff_summary']['languages'])} code. " \
+                           f"Make it visually appealing and professional."
+            
+            image_url = self.generate_image(image_prompt)
+            
+            # Add the generated image to the blog post if it doesn't already have one
+            if image_url and ("![" not in blog_content or "](" not in blog_content):
+                print_progress("Adding generated image to blog post", "🖼️", "bold", "yellow")
+                
+                # Create image caption based on PR title
+                image_caption = f"Visual representation of {pr_info['pr_title']}"
+                
+                # Add the image at the beginning of the blog post, after the title if present
+                if blog_content.startswith("#"):
+                    # Find the end of the title line
+                    title_end = blog_content.find("\n")
+                    if title_end != -1:
+                        blog_content = blog_content[:title_end+1] + f"\n![{image_caption}]({image_url})\n\n" + blog_content[title_end+1:]
                 else:
+                    # If no title, add the image at the very beginning
                     blog_content = f"![{image_caption}]({image_url})\n\n" + blog_content
         
-        # If we couldn't generate an image, fall back to the old method
-        elif not image_url:
+        # If we couldn't generate an image or add it properly, fall back to the old method
+        if "![" not in blog_content or "](" not in blog_content:
             print_progress("Adding image to blog post (fallback method)", "🖼️", "bold", "yellow")
             # If no image is present, add a request to include one
             follow_up_prompt = f"""
@@ -270,6 +269,24 @@ class BlogGenerator:
             temperature=0.7)
             
             blog_content = image_response.choices[0].message.content
+        
+        # Add body image if provided
+        if body_image:
+            print_progress("Adding user-provided body image to blog post", "🖼️", "bold", "green")
+            # Create image caption
+            image_caption = "Additional visual context"
+            
+            # Add the body image near the end of the blog post, before any "Related Resources" or "Conclusion" section
+            conclusion_index = blog_content.lower().find("## conclusion")
+            resources_index = blog_content.lower().find("## related resources")
+            
+            if conclusion_index != -1 or resources_index != -1:
+                # Find the earliest section between conclusion and resources
+                insert_index = min(i for i in [conclusion_index, resources_index] if i != -1)
+                blog_content = blog_content[:insert_index] + f"\n\n![{image_caption}]({body_image})\n\n" + blog_content[insert_index:]
+            else:
+                # If no conclusion or resources section, add it at the end
+                blog_content += f"\n\n![{image_caption}]({body_image})\n"
 
         return blog_content
 
@@ -548,6 +565,8 @@ def main():
     parser.add_argument("--no-enhance", action="store_true", help="Skip enhancing the blog post with web content")
     parser.add_argument("--no-validate", action="store_true", help="Skip validating and refining the blog post to sound more human")
     parser.add_argument("--update", help="Update an existing blog post with new information")
+    parser.add_argument("--header-image", help="Path to the header image to include in the blog post")
+    parser.add_argument("--body-image", help="Path to the body image to include in the blog post")
 
     args = parser.parse_args()
     print_progress("Parsed command line arguments", "✅", "bold", "blue")
@@ -590,7 +609,7 @@ def main():
     pr_info = generator.collect_pr_info(repo_owner, repo_name, args.pr)
 
     # Generate blog post
-    blog_post = generator.generate_blog_post(pr_info, args.direction)
+    blog_post = generator.generate_blog_post(pr_info, args.direction, args.header_image, args.body_image)
 
     # Enhance with web content by default, unless --no-enhance is specified
     if not args.no_enhance:
