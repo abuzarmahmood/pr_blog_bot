@@ -110,6 +110,7 @@ class BlogGenerator:
             })
             
         return {
+            "pr_number": pr_number,
             "pr_title": pr_data.get("title", ""),
             "pr_description": pr_data.get("body", ""),
             "pr_author": pr_author,
@@ -125,12 +126,13 @@ class BlogGenerator:
             "contributors": list(contributors)
         }
 
-    def generate_image(self, prompt: str, size: str = "1024x1024", model: str = "dall-e-3") -> Optional[str]:
+    def generate_image(self, prompt: str, pr_info: Dict[str, Any], size: str = "1024x1024", model: str = "dall-e-3") -> Optional[str]:
         """
         Generate an image using OpenAI's DALL-E API and save it locally
         
         Args:
             prompt: Text description of the desired image
+            pr_info: Dictionary with PR information
             size: Size of the image (1024x1024, 1792x1024, or 1024x1792 for dall-e-3)
             model: Model to use (dall-e-2 or dall-e-3)
             
@@ -151,10 +153,11 @@ class BlogGenerator:
             image_url = response.data[0].url
             print_progress("Image generated successfully", "✅", "bold", "green")
             
-            # Create a safe filename from the prompt
+            # Create a safe filename from the prompt and include PR number
             safe_filename = "".join(c if c.isalnum() else "_" for c in prompt[:50])
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-            local_image_path = f"images/{timestamp}_{safe_filename}.png"
+            pr_number = pr_info.get('pr_number', str(pr_info.get('pr_url', '').split('/')[-1]))
+            local_image_path = f"images/{timestamp}_PR{pr_number}_{safe_filename}.png"
             
             # Download the image to local storage
             from utils import download_image
