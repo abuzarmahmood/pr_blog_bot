@@ -170,7 +170,7 @@ class BlogGenerator:
             return None
 
     def generate_blog_post(self, pr_info: Dict[str, Any], user_direction: Optional[str] = None, 
-                          header_image: Optional[str] = None, body_image: Optional[str] = None) -> str:
+                          header_image: Optional[str] = None, body_images: Optional[List[str]] = None) -> str:
         """
         Generate a blog post based on PR information
         
@@ -178,7 +178,7 @@ class BlogGenerator:
             pr_info: Dictionary with PR information
             user_direction: Optional user input on the direction of the blog post
             header_image: Optional path to an image to include at the top of the blog post
-            body_image: Optional path to an image to include in the body of the blog post
+            body_images: Optional list of paths to images to include in the body of the blog post
             
         Returns:
             Generated blog post content
@@ -270,23 +270,26 @@ class BlogGenerator:
             
             blog_content = image_response.choices[0].message.content
         
-        # Add body image if provided
-        if body_image:
-            print_progress("Adding user-provided body image to blog post", "🖼️", "bold", "green")
-            # Create image caption
-            image_caption = "Additional visual context"
+        # Add body images if provided
+        if body_images:
+            print_progress("Adding user-provided body images to blog post", "🖼️", "bold", "green")
             
-            # Add the body image near the end of the blog post, before any "Related Resources" or "Conclusion" section
-            conclusion_index = blog_content.lower().find("## conclusion")
-            resources_index = blog_content.lower().find("## related resources")
-            
-            if conclusion_index != -1 or resources_index != -1:
-                # Find the earliest section between conclusion and resources
-                insert_index = min(i for i in [conclusion_index, resources_index] if i != -1)
-                blog_content = blog_content[:insert_index] + f"\n\n![{image_caption}]({body_image})\n\n" + blog_content[insert_index:]
-            else:
-                # If no conclusion or resources section, add it at the end
-                blog_content += f"\n\n![{image_caption}]({body_image})\n"
+            # Process each body image
+            for i, body_image in enumerate(body_images):
+                # Create image caption with index for multiple images
+                image_caption = f"Additional visual context {i+1}" if len(body_images) > 1 else "Additional visual context"
+                
+                # Add the body image near the end of the blog post, before any "Related Resources" or "Conclusion" section
+                conclusion_index = blog_content.lower().find("## conclusion")
+                resources_index = blog_content.lower().find("## related resources")
+                
+                if conclusion_index != -1 or resources_index != -1:
+                    # Find the earliest section between conclusion and resources
+                    insert_index = min(i for i in [conclusion_index, resources_index] if i != -1)
+                    blog_content = blog_content[:insert_index] + f"\n\n![{image_caption}]({body_image})\n\n" + blog_content[insert_index:]
+                else:
+                    # If no conclusion or resources section, add it at the end
+                    blog_content += f"\n\n![{image_caption}]({body_image})\n"
 
         return blog_content
 
@@ -566,7 +569,7 @@ def main():
     parser.add_argument("--no-validate", action="store_true", help="Skip validating and refining the blog post to sound more human")
     parser.add_argument("--update", help="Update an existing blog post with new information")
     parser.add_argument("--header-image", help="Path to the header image to include in the blog post")
-    parser.add_argument("--body-image", help="Path to the body image to include in the blog post")
+    parser.add_argument("--body-image", nargs='+', help="Paths to body images to include in the blog post")
 
     args = parser.parse_args()
     print_progress("Parsed command line arguments", "✅", "bold", "blue")
